@@ -52,6 +52,7 @@ def default_baby_search():
         return render_template('baby.html'), 200    
     else:
         url = BASE_URL + 'search/' + term
+        print(url)
         lucky = request.form.get('lucky')
         if not lucky:
             return render_template('baby-search.html',torrents = baby_parse_page(url)), 200
@@ -88,26 +89,6 @@ def download_baby_search():
         r = requests.post(url = HOME_BASE, data = json.dumps(b), headers = header)
         addRequest.append(r.json())
     return jsonify(addRequest), 200
-
-@APP.route('/search/', methods=['GET'])
-def default_search():
-    '''
-    Default page for search
-    '''
-    return 'No search term entered<br/>Format for search: /search/search_term/page_no(optional)/'
-
-
-@APP.route('/search/<term>/', methods=['GET'])
-def search_torrents(term=None):
-    '''
-    Searches TPB using the given term. If no term is given, defaults to recent.
-    '''
-
-    sort = request.args.get('sort')
-    sort_arg = sort_filters[request.args.get('sort')] if sort in sort_filters else ''
-
-    url = BASE_URL + 'search/' + str(term)
-    return jsonify(parse_page(url)), 200
 
 def baby_parse_page(url, sort=None):
     
@@ -150,57 +131,6 @@ def baby_parse_page(url, sort=None):
         torrents = sorted(torrents, key=lambda k: k.get(sort_params[0]), reverse=sort_params[1].upper() == 'DESC')
 
     return torrents
-
-def parse_page(url, sort=None):
-    
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--no-sandbox")
-
-    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=chrome_options)
-    
-    driver.get(url)
-    delay = 30 # seconds
-    try:
-        myElem = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.ID,'torrents')))
-        soup = BeautifulSoup(driver.page_source, 'lxml')
-    except TimeoutException:
-        return "Could not load search results!"
-    
-    '''
-    This function parses the page and returns list of torrents
-    '''
-    titles = parse_titles(soup)
-    links = parse_links(soup)
-    magnets = parse_magnet_links(soup)
-    uploaders = parse_uploaders(soup)
-    sizes = parse_sizes(soup)
-    times = parse_times(soup)
-    seeders, leechers = parse_seed_leech(soup)
-    cat, subcat = parse_cat(soup)
-    torrents = []
-    for torrent in zip(titles, magnets, times, sizes, uploaders, seeders, leechers, cat, subcat, links):
-        torrents.append({
-            'title': torrent[0],
-            'magnet': torrent[1],
-            'time': convert_to_date(torrent[2]),
-            'size': convert_to_bytes(torrent[3]),
-            'uploader': torrent[4],
-            'seeds': int(torrent[5]),
-            'leeches': int(torrent[6]),
-            'category': torrent[7],
-            'subcat': torrent[8],
-            'id': torrent[9],
-        })
-
-    if sort:
-        sort_params = sort.split('_')
-        torrents = sorted(torrents, key=lambda k: k.get(sort_params[0]), reverse=sort_params[1].upper() == 'DESC')
-
-    return torrents
-
 
 def parse_magnet_links(soup):
     '''
