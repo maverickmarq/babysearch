@@ -44,78 +44,7 @@ sort_filters = {
     'category_desc': 14
 }
 
-
-@APP.route('/', methods=['GET'])
-def index():
-    '''
-    This is the home page and contains links to other API
-    '''
-    return render_template('index.html'), 200
-
-
-@APP.route('/top/', methods=['GET'])
-@APP.route('/top48h/', methods=['GET'])
-def default_top():
-    '''
-    Returns default page with categories
-    '''
-    return render_template('top.html'), 200
-
-
-@APP.route('/top/<int:cat>/', methods=['GET'])
-def top_torrents(cat=0):
-    '''
-    Returns top torrents
-    '''
-
-    sort = request.args.get('sort')
-    sort_arg = sort if sort in sort_filters else ''
-    if cat == 0:
-    	url = BASE_URL + 'search.php?q=top100:all'
-    else:
-        url = BASE_URL + 'search.php?q=top100:' + str(cat)
-    return jsonify(parse_page(url, sort=sort_arg)), 200
-
-
-@APP.route('/top48h/<int:cat>/', methods=['GET'])
-def top48h_torrents(cat=0):
-    '''
-    Returns top torrents last 48 hrs
-    '''
-
-    sort = request.args.get('sort')
-    sort_arg = sort if sort in sort_filters else ''
-
-    if cat == 0:
-        url = BASE_URL + 'search.php?q=top100:48h'
-    else:
-        url = BASE_URL + 'search.php?q=top100:48h_' + str(cat)
-
-    return jsonify(parse_page(url, sort=sort_arg)), 200
-
-
-@APP.route('/recent/', methods=['GET'])
-def recent_torrents():
-    '''
-    This function implements recent page of TPB
-    '''
-    sort = request.args.get('sort')
-    sort_arg = sort if sort in sort_filters else ''
-
-    url = BASE_URL + 'search.php?q=top100:recent'
-    return jsonify(parse_page(url, sort=sort_arg)), 200
-
-
-@APP.route('/api-search/', methods=['GET'])
-def api_search():
-    query = request.query_string.decode('utf-8')
-    if not query:
-      return 'No search term entered<br/>Format for api-search: /api-search/?q=<search_term>'
-
-    url = BASE_URL + 'search.php?q=' + query
-    return jsonify(parse_page(url)), 200
-
-@APP.route('/baby-search/', methods=['GET', 'POST'])
+@APP.route('/', methods=['GET', 'POST'])
 def default_baby_search():
     term = request.form.get('term')
     
@@ -401,7 +330,6 @@ def convert_to_date(date_str):
         date_format = '%Y-%m-%d %H:%M'
 
     else:
-        # date_format = '%m-%d %Y'
         date_format = '%Y-%m-%d'
 
     return datetime.strptime(date_str, date_format)
