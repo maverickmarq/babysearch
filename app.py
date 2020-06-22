@@ -51,7 +51,7 @@ def default_baby_search():
     if not term:
         return render_template('baby.html'), 200    
     else:
-        url = BASE_URL + 'search/' + term
+        url = BASE_URL + '/search/' + term
         print(url)
         lucky = request.form.get('lucky')
         if not lucky:
