@@ -1,0 +1,31 @@
+<html>
+    <caption>Search Results</caption>
+	<form action="/download/" onsubmit="" name="form1" id="form1" method="post">
+		<table>
+			{%for i in range(0, 9)%}
+			<tr>
+				<th>Download?</th>
+				<th>Name</th>
+				<th>Date</th>
+				<th>Seeds</th>
+				<th>Sub-Cat</th>
+			</tr>
+			<tr>
+				<td>
+					<input 
+						class="downloads" 
+						type="checkbox" 
+						name="download"
+						value={{torrents[i]['magnet']}}
+					/>
+				</td>
+				<td>{{ torrents[i]['title'] }}</td>
+				<td>{{ torrents[i]['time'] }}</td>
+				<td>{{ torrents[i]['seeds'] }}</td>
+				<td>{{ torrents[i]['subcat'] }}</td>
+			</tr>
+			{% endfor %}
+		</table>	
+      <input type="submit" value="Download" name="submit">
+    </form>
+</html>
