@@ -6,7 +6,7 @@
 		<a href="/">
 			<img src="{{url_for('static', filename='Untitled.png')}}" atl="get fucked" style="max-width:100%;height:auto;" />
 		</a>
-		{%for t in results}
+		{% for t in results %}
 		<p> {{ t['name'] }} 
 		<p> {{ t['result'] }}
 		{% endfor %}
