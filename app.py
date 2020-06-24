@@ -89,7 +89,7 @@ def download_baby_search():
         r = requests.post(url = HOME_BASE, data = json.dumps(b), headers = header)
         addRequest.append(r.json())
 
-    return jsonify(addRequest), 200
+    return render_template('download.html', results=addRequest), 200
 
 def baby_parse_page(url, sort=None):
     
