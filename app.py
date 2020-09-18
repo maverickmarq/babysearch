@@ -23,6 +23,8 @@ CORS(APP)
 
 BASE_URL = os.getenv('BASE_URL', 'http://example.com/')
 HOME_BASE = os.getenv('HOME_BASE', 'http://example.com/')
+DATABASE_URL = os.getenv('DATABASE_URL', 'http://example.com/')
+
 
 JSONIFY_PRETTYPRINT_REGULAR = True
 
@@ -44,6 +46,68 @@ sort_filters = {
     'category_desc': 14
 }
 
+def create_tables():
+    """ create tables in the PostgreSQL database"""
+    commands = (
+        """
+        CREATE TABLE users (
+            user_id SERIAL PRIMARY KEY,
+            user_name VARCHAR(255) NOT NULL
+        )
+        """,
+        """ CREATE TABLE parts (
+                part_id SERIAL PRIMARY KEY,
+                part_name VARCHAR(255) NOT NULL
+                )
+        """,
+        """
+        CREATE TABLE part_drawings (
+                part_id INTEGER PRIMARY KEY,
+                file_extension VARCHAR(5) NOT NULL,
+                drawing_data BYTEA NOT NULL,
+                FOREIGN KEY (part_id)
+                REFERENCES parts (part_id)
+                ON UPDATE CASCADE ON DELETE CASCADE
+        )
+        """,
+        """
+        CREATE TABLE vendor_parts (
+                vendor_id INTEGER NOT NULL,
+                part_id INTEGER NOT NULL,
+                PRIMARY KEY (vendor_id , part_id),
+                FOREIGN KEY (vendor_id)
+                    REFERENCES vendors (vendor_id)
+                    ON UPDATE CASCADE ON DELETE CASCADE,
+                FOREIGN KEY (part_id)
+                    REFERENCES parts (part_id)
+                    ON UPDATE CASCADE ON DELETE CASCADE
+        )
+        """)
+    conn = None
+    try:
+        # read the connection parameters
+        params = config()
+        # connect to the PostgreSQL server
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+        # create table one by one
+        for command in commands:
+            cur.execute(command)
+        # close communication with the PostgreSQL database server
+        cur.close()
+        # commit the changes
+        conn.commit()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+if __name__ == '__main__':
+    create_tables()
+
+
 @APP.route('/', methods=['GET', 'POST'])
 def default_baby_search():
     term = request.form.get('term')
@@ -55,7 +119,8 @@ def default_baby_search():
         print(url)
         lucky = request.form.get('lucky')
         if not lucky:
-            return render_template('baby-search.html',torrents = baby_parse_page(url)), 200
+            count = 20 if len(torrents) >= 20 else len(torrents)
+            return render_template('baby-search.html',torrents = baby_parse_page(url), count), 200
         else:
             return lucky_search(baby_parse_page(url))
 
