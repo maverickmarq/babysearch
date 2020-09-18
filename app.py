@@ -119,8 +119,8 @@ def default_baby_search():
         print(url)
         lucky = request.form.get('lucky')
         if not lucky:
-            count = 20 if len(torrents) >= 20 else len(torrents)
-            return render_template('baby-search.html',torrents = baby_parse_page(url), count), 200
+            l = 20 if len(torrents) >= 20 else len(torrents)
+            return render_template('baby-search.html',torrents = baby_parse_page(url), count = l), 200
         else:
             return lucky_search(baby_parse_page(url))
 
