@@ -50,21 +50,31 @@ sort_filters = {
 @APP.route('/', methods=['GET', 'POST'])
 def default_baby_search():
     term = request.form.get('term')
-    
+
     if not term:
-        return render_template('baby.html'), 200    
+        return render_template('baby.html'), 200
     else:
         url = BASE_URL + 'search/' + term
         lucky = request.form.get('lucky')
         if not lucky:
-            #todo: check for zero
             t = baby_parse_page(url)
+
+            '''
+            Check that baby_parse_page has returned a list.
+            Otherwise deliver the bad news.
+            '''
+            if type(t) is not list:
+                return render_template('baby.html', message = t), 200
+
+            '''
+            Get length of results.
+            #TODO: Pagination
+            '''
             l = 20 if len(t) >= 20 else len(t)
-			
             return render_template('baby-search.html',torrents = t, count = l), 200
         else:
             return lucky_search(baby_parse_page(url))
-            
+
 @APP.route('/search', methods=['GET'])
 def search_baby_search():
     query = request.args.get('q')
@@ -105,15 +115,14 @@ def download_baby_search():
     return render_template('download.html', results=addRequest), 200
 
 def baby_parse_page(url, sort=None):
-    
+
     chrome_options = webdriver.ChromeOptions()
-    chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-sandbox")
 
-    driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), chrome_options=chrome_options)
-    
+    driver = webdriver.Chrome(chrome_options=chrome_options)
+
     driver.get(url)
     delay = 25 # seconds
     try:
@@ -121,7 +130,13 @@ def baby_parse_page(url, sort=None):
         soup = BeautifulSoup(driver.page_source, 'lxml')
     except TimeoutException:
         return "Could not load search results!"
-    
+
+    '''
+    Check that any results are found before proceeding
+    '''
+    if any_results(soup):
+        return "No results."
+
     '''
     This function parses the page and returns list of torrents
     '''
@@ -145,6 +160,11 @@ def baby_parse_page(url, sort=None):
         torrents = sorted(torrents, key=lambda k: k.get(sort_params[0]), reverse=sort_params[1].upper() == 'DESC')
 
     return torrents
+
+
+def any_results(soup):
+    return len(soup.find_all('ol', {'id': 'torrents'})) != 0
+
 
 def parse_magnet_links(soup):
     '''
