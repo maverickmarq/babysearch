@@ -56,46 +56,37 @@ def default_baby_search():
     else:
         url = BASE_URL + 'search/' + term
         lucky = request.form.get('lucky')
+        torrents = baby_parse_page(url)
+        '''
+        Check that baby_parse_page has returned a list.
+        Otherwise deliver the bad news.
+        '''
+        if type(torrents) is not list:
+            return render_template('baby.html', message = torrents), 200
+
         if not lucky:
-            t = baby_parse_page(url)
-
-            '''
-            Check that baby_parse_page has returned a list.
-            Otherwise deliver the bad news.
-            '''
-            if type(t) is not list:
-                return render_template('baby.html', message = t), 200
-
             '''
             Get length of results.
             #TODO: Pagination
             '''
-            l = 20 if len(t) >= 20 else len(t)
-            return render_template('baby-search.html',torrents = t, count = l), 200
+            l = 20 if len(torrents) >= 20 else len(torrents)
+            return render_template('baby-search.html',torrents = torrents, count = l), 200
         else:
-            return lucky_search(baby_parse_page(url))
+            return lucky_search(torrents)
 
 @APP.route('/search', methods=['GET'])
 def search_baby_search():
     query = request.args.get('q')
-    url = BASE_URL + 'search' + q
+    url = BASE_URL + 'search.php?q=' + query
     return lucky_search(baby_parse_page(url))
 
 def lucky_search(torrents):
-    transmission = requests.get(HOME_BASE)
-    sessionId = transmission.headers.get('X-Transmission-Session-Id')
-   
-    header = { 'X-Transmission-Session-Id' : sessionId }
-    body = { "method" : "torrent-add", "arguments" : { "filename" : torrents[0]['magnet'] }}
-    r = requests.post(url = HOME_BASE, data = json.dumps(body), headers = header)
-    return jsonify(r.json()), 200
-
-
-@APP.route('/download/', methods=['POST'])
-def download_baby_search():
-    magnets = []
-    torrents = request.form.getlist('download')
-   
+    if type(torrents) is not list:
+        return render_template('baby.html', message = torrents), 200
+    
+    return download(torrents[:1])
+    
+def download(torrents):
     transmission = requests.get(HOME_BASE)
     sessionId = transmission.headers.get('X-Transmission-Session-Id')
    
@@ -106,13 +97,18 @@ def download_baby_search():
 
     for t in torrents:
         b = body
-        b.update({ "arguments" : { "filename" : t } })
-        print(b)
+        b.update({ "arguments" : { "filename" : t['magnet'] } })
         r = requests.post(url = HOME_BASE, data = json.dumps(b), headers = header)
         addRequest.append(r.json())
 
-        print(addRequest)
     return render_template('download.html', results=addRequest), 200
+
+@APP.route('/download/', methods=['POST'])
+def download_baby_search():
+    magnets = []
+    torrents = request.form.getlist('download')
+    return download(torrents)
+    
 
 def baby_parse_page(url, sort=None):
 
@@ -132,38 +128,35 @@ def baby_parse_page(url, sort=None):
         return "Could not load search results!"
 
     '''
-    Check that any results are found before proceeding
-    '''
-    if not any_results(soup):
-        return "No results."
-
-    '''
     This function parses the page and returns list of torrents
     '''
     titles = parse_titles(soup)
     magnets = parse_magnet_links(soup)
-    times = parse_times(soup)
-    seeders, leechers = parse_seed_leech(soup)
-    cat, subcat = parse_cat(soup)
-    torrents = []
-    for torrent in zip(titles, magnets, times, seeders, subcat):
-        torrents.append({
-            'title': torrent[0],
-            'magnet': torrent[1],
-            'time': convert_to_date(torrent[2]),
-            'seeds': int(torrent[3]),
-            'subcat': torrent[4]
-        })
+    
+    '''
+    if any magnets are found, continue processing
+    '''
+    if titles[0] != "No results returned":
+        times = parse_times(soup)
+        seeders, leechers = parse_seed_leech(soup)
+        cat, subcat = parse_cat(soup)
+        torrents = []
+        for torrent in zip(titles, magnets, times, seeders, subcat):
+            torrents.append({
+                'title': torrent[0],
+                'magnet': torrent[1],
+                'time': convert_to_date(torrent[2]),
+                'seeds': int(torrent[3]),
+                'subcat': torrent[4]
+            })
 
-    if sort:
-        sort_params = sort.split('_')
-        torrents = sorted(torrents, key=lambda k: k.get(sort_params[0]), reverse=sort_params[1].upper() == 'DESC')
+        if sort:
+            sort_params = sort.split('_')
+            torrents = sorted(torrents, key=lambda k: k.get(sort_params[0]), reverse=sort_params[1].upper() == 'DESC')
 
-    return torrents
-
-
-def any_results(soup):
-    return len(soup.find_all('ol', {'id': 'torrents'})) != 0
+        return torrents
+    else:
+        return "No results"
 
 
 def parse_magnet_links(soup):
