@@ -1,21 +1,17 @@
-FROM python:3.6.4-alpine3.7
+FROM selenium/standalone-chrome
 
-RUN apk add --no-cache git
+RUN sudo apt-get update
+RUN sudo apt-get install python3 python3-pip gunicorn3 -y
 
 COPY requirements.txt requirements.txt
 
-RUN apk add --no-cache libxml2-dev && \
-    apk add --no-cache libxml2 && \
-    apk add --update --no-cache g++ gcc libxslt-dev && \
-    pip3 install -r ./requirements.txt
-
-WORKDIR /opt
-
-RUN mkdir -p thepiratebay
-WORKDIR /opt/thepiratebay
+RUN pip3 install -r ./requirements.txt
 
 COPY . .
 
-RUN ["chmod", "+x", "entrypoint.sh"]
+RUN ["sudo", "chmod", "+x", "entrypoint.sh"]
 
-ENTRYPOINT ["./entrypoint.sh", "$API_PORT" ]
+ENV BASE_URL=https://thepiratebay.org/
+ENV HOME_BASE=http://172.25.0.2:9091/transmission/rpc
+
+ENTRYPOINT ["./entrypoint.sh", "8000" ]

@@ -134,7 +134,7 @@ def baby_parse_page(url, sort=None):
     '''
     Check that any results are found before proceeding
     '''
-    if any_results(soup):
+    if not any_results(soup):
         return "No results."
 
     '''
