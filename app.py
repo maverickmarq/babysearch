@@ -83,8 +83,19 @@ def search_baby_search():
 def lucky_search(torrents):
     if type(torrents) is not list:
         return render_template('baby.html', message = torrents), 200
+
+    transmission = requests.get(HOME_BASE)
+    sessionId = transmission.headers.get('X-Transmission-Session-Id')
+   
+    header = { 'X-Transmission-Session-Id' : sessionId }
+    body = { "method" : "torrent-add", "arguments" : { "filename" : torrents[0]['magnet'] }}
     
-    return download(torrents[:1])
+    addRequest = []
+    r = requests.post(url = HOME_BASE, data = json.dumps(body), headers = header)
+    addRequest.append(r)
+    
+    return render_template('download.html', results=addRequest), 200
+
     
 def download(torrents):
     transmission = requests.get(HOME_BASE)
@@ -97,9 +108,9 @@ def download(torrents):
 
     for t in torrents:
         b = body
-        b.update({ "arguments" : { "filename" : t['magnet'] } })
+        b.update({ "arguments" : { "filename" : t } })
         r = requests.post(url = HOME_BASE, data = json.dumps(b), headers = header)
-        addRequest.append(r.json())
+        addRequest.append(r)
 
     return render_template('download.html', results=addRequest), 200
 
