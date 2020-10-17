@@ -89,12 +89,10 @@ def lucky_search(torrents):
    
     header = { 'X-Transmission-Session-Id' : sessionId }
     body = { "method" : "torrent-add", "arguments" : { "filename" : torrents[0]['magnet'] }}
-    
-    addRequest = []
+
     r = requests.post(url = HOME_BASE, data = json.dumps(body), headers = header)
-    addRequest.append(r)
-    
-    return render_template('download.html', results=addRequest), 200
+    s = r.json()['result']
+    return render_template('baby.html', message = s), 200
 
     
 def download(torrents):
@@ -104,15 +102,15 @@ def download(torrents):
     header = { 'X-Transmission-Session-Id' : sessionId }
     body = { "method" : "torrent-add" }
 
-    addRequest = []
-
+    s = ""
     for t in torrents:
         b = body
         b.update({ "arguments" : { "filename" : t } })
         r = requests.post(url = HOME_BASE, data = json.dumps(b), headers = header)
-        addRequest.append(r)
-
-    return render_template('download.html', results=addRequest), 200
+        s += r.json()['result'] + ', '
+        
+        
+    return render_template('baby.html', message = s), 200
 
 @APP.route('/download/', methods=['POST'])
 def download_baby_search():
