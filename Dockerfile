@@ -11,7 +11,4 @@ COPY . .
 
 RUN ["sudo", "chmod", "+x", "entrypoint.sh"]
 
-ENV BASE_URL=https://thepiratebay.org/
-ENV HOME_BASE=http://172.25.0.2:9091/transmission/rpc
-
-ENTRYPOINT ["./entrypoint.sh", "8000" ]
+ENTRYPOINT ["./entrypoint.sh", "${API_PORT}" ]
