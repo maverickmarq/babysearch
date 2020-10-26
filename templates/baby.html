@@ -5,17 +5,15 @@
 	<form action="/" method="post" >
 		<table>
 			<tr>
-				<td>
-					<a href="/">
-						<img src="{{url_for('static', filename='Untitled.png')}}" atl="get fucked" style="max-width:100%;height:auto;" />
-					</a>
-				</td>
-				<text>{{ message }}</text>
+				<td><a href="/"><img src="{{url_for('static', filename='Untitled.png')}}" atl="get fucked" style="max-width:100%;height:auto;"/></a></td>
 			</tr>
+			{% if message %}
 			<tr>
-				<td>
-					<input type="text" name="term" id="term" style="font-size:4vw">
-				</td>
+				<td><text>{{ message }}</text></td>
+			</tr>
+			{% endif %}
+			<tr>
+				<td><input type="text" name="term" id="term" style="font-size:4vw"></td>
 			</tr>
 			<tr>
 				<td>
@@ -23,5 +21,53 @@
 					<input type="submit" value="Lucky Baby" name="lucky" style="font-size:4vw">
 				</td>
 			<tr>
-    </form>
+		</table>
+	</form>
+	{% if existing %}
+	<form action="/edit/" onsubmit="" name="existingForm" id="existingForm" method="post">
+		<table>
+			<tr>
+				<th>Name</th>
+				<th>Progress</th>
+				<th>Clear</th>
+			</tr>
+			
+			{%for i in existing.arguments.torrents %}
+			<tr>
+				<td>{{ i.name }}</td>
+				<td><progress value={{ i.percentDone }}></progress></td>
+				<td><button type="submit" value={{i.id}} name="clearExisting">Clear</button></td>
+			</tr>
+			{% endfor %}
+		</table>	
+	</form>
+	{% endif %}
+	
+	{% if torrents %}
+	<form action="/download/" onsubmit="" name="downloadForm" id="downloadForm" method="post">
+		<table>
+			<tr>
+				<th><input type="checkbox" onClick="toggle(this)" /></th>
+				<th>Name</th>
+				<th>Date</th>
+				<th>Size</th>
+				<th>Seeds</th>
+				<th>Sub-Cat</th>
+			</tr>
+			
+			{%for i in torrents %}
+			<tr>
+				<td><input class="downloads" type="checkbox" name="download" value={{ i.magnet }} /></td>
+				<td>{{ i.title }}</td>
+				<td>{{ i.time }}</td>
+				<td>{{ i.seeds }}</td>
+				<td>{{ i.size }}</td>
+				<td>{{ i.subcat }}</td>
+				<td><button type="submit" value={{ i.magnet }} name="download">Download</button></td>
+			</tr>
+			{% endfor %}
+		</table>	
+		<input type="submit" value="Download" name="submit">
+	</form>
+	{% endif %}
 </html>
