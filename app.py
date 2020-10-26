@@ -45,6 +45,7 @@ sort_filters = {
     'category_desc': 14
 }
 
+searchResults = None
 
 @APP.route('/', methods=['GET', 'POST'])
 def default_baby_search():
@@ -89,19 +90,7 @@ def get_header():
     sessionId = transmission.headers.get('X-Transmission-Session-Id')
    
     return { 'X-Transmission-Session-Id' : sessionId }
-    
-def download(torrents):
-    body = { "method" : "torrent-add" }
 
-    s = ""
-    for t in torrents:
-        b = body
-        b.update({ "arguments" : { "filename" : t } })
-        r = requests.post(url = HOME_BASE, data = json.dumps(b), headers = get_header())
-        s += r.json()['result'] + ', '
-        
-        
-    return render_template('baby.html', message = s, existing = get_existing()), 200
 
 def get_existing():
     body = { "arguments": { "fields": [ "id", "name", "percentDone" ]}, "method": "torrent-get"}
@@ -116,14 +105,21 @@ def edit_existing():
     clear = request.form.get("clearExisting")
     body = { "arguments": { "ids": [ int(clear) ] }, "method": "torrent-remove"}
 
+    global searchResults
     requests.post(url = HOME_BASE, data = json.dumps(body), headers = get_header())
-    return render_template('baby.html', existing = get_existing())
+    return render_template('baby.html', torrents = searchResults, existing = get_existing())
     
 
 @APP.route('/download/', methods=['POST'])
 def download_baby_search():
     torrents = request.form.getlist('download')
-    return download(torrents)
+
+    global searchResults
+    for t in torrents:
+        body = { "arguments" : { "filename" : t }, "method" : "torrent-add" }
+        requests.post(url = HOME_BASE, data = json.dumps(body), headers = get_header())
+        
+    return render_template('baby.html', torrents = searchResults, existing = get_existing()), 200
     
 
 def baby_parse_page(url, sort=None):
@@ -172,6 +168,8 @@ def baby_parse_page(url, sort=None):
             sort_params = sort.split('_')
             torrents = sorted(torrents, key=lambda k: k.get(sort_params[0]), reverse=sort_params[1].upper() == 'DESC')
 
+        global searchResults
+        searchResults = torrents
         return torrents
     else:
         return "No results"

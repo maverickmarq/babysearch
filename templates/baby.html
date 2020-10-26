@@ -45,29 +45,27 @@
 	
 	{% if torrents %}
 	<form action="/download/" onsubmit="" name="downloadForm" id="downloadForm" method="post">
+		<input type="hidden" value={{ torrents }} name="torrents">
 		<table>
 			<tr>
-				<th><input type="checkbox" onClick="toggle(this)" /></th>
 				<th>Name</th>
 				<th>Date</th>
-				<th>Size</th>
 				<th>Seeds</th>
+				<th>Size</th>
 				<th>Sub-Cat</th>
 			</tr>
 			
 			{%for i in torrents %}
-			<tr>
-				<td><input class="downloads" type="checkbox" name="download" value={{ i.magnet }} /></td>
-				<td>{{ i.title }}</td>
-				<td>{{ i.time }}</td>
-				<td>{{ i.seeds }}</td>
-				<td>{{ i.size }}</td>
-				<td>{{ i.subcat }}</td>
-				<td><button type="submit" value={{ i.magnet }} name="download">Download</button></td>
-			</tr>
+				<tr>
+					<td>{{ i.title }}</td>
+					<td>{{ i.time }}</td>
+					<td>{{ i.seeds }}</td>
+					<td>{{ i.size }}</td>
+					<td>{{ i.subcat }}</td>
+					<td><button type="submit" value={{ i.magnet }} name="download">Download</button></td>
+				</tr>
 			{% endfor %}
 		</table>	
-		<input type="submit" value="Download" name="submit">
 	</form>
 	{% endif %}
 </html>
