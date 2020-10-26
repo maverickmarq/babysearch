@@ -25,7 +25,6 @@ BASE_URL = os.getenv('BASE_URL', 'http://example.com/')
 HOME_BASE = os.getenv('HOME_BASE', 'http://example.com/')
 DATABASE_URL = os.getenv('DATABASE_URL', 'http://example.com/')
 
-
 JSONIFY_PRETTYPRINT_REGULAR = True
 
 # Translation table for sorting filters
@@ -52,7 +51,7 @@ def default_baby_search():
     term = request.form.get('term')
 
     if not term:
-        return render_template('baby.html'), 200
+        return render_template('baby.html', existing = get_existing()), 200
     else:
         url = BASE_URL + 'search/' + term
         lucky = request.form.get('lucky')
@@ -62,17 +61,13 @@ def default_baby_search():
         Otherwise deliver the bad news.
         '''
         if type(torrents) is not list:
-            return render_template('baby.html', message = torrents), 200
+            return render_template('baby.html', message = torrents, existing = get_existing()), 200
 
         if not lucky:
-            '''
-            Get length of results.
-            #TODO: Pagination
-            '''
-            l = 20 if len(torrents) >= 20 else len(torrents)
-            return render_template('baby-search.html',torrents = torrents, count = l), 200
+            return render_template('baby.html', torrents = torrents, existing = get_existing()), 200
         else:
             return lucky_search(torrents)
+    
 
 @APP.route('/search', methods=['GET'])
 def search_baby_search():
@@ -82,39 +77,51 @@ def search_baby_search():
 
 def lucky_search(torrents):
     if type(torrents) is not list:
-        return render_template('baby.html', message = torrents), 200
+        return render_template('baby.html', message = torrents, existing = get_existing()), 200
 
-    transmission = requests.get(HOME_BASE)
-    sessionId = transmission.headers.get('X-Transmission-Session-Id')
-   
-    header = { 'X-Transmission-Session-Id' : sessionId }
     body = { "method" : "torrent-add", "arguments" : { "filename" : torrents[0]['magnet'] }}
 
-    r = requests.post(url = HOME_BASE, data = json.dumps(body), headers = header)
-    s = r.json()['result']
-    return render_template('baby.html', message = s), 200
-
+    requests.post(url = HOME_BASE, data = json.dumps(body), headers = get_header())
+    return render_template('baby.html', existing = get_existing()), 200
     
-def download(torrents):
+def get_header():
     transmission = requests.get(HOME_BASE)
     sessionId = transmission.headers.get('X-Transmission-Session-Id')
    
-    header = { 'X-Transmission-Session-Id' : sessionId }
+    return { 'X-Transmission-Session-Id' : sessionId }
+    
+def download(torrents):
     body = { "method" : "torrent-add" }
 
     s = ""
     for t in torrents:
         b = body
         b.update({ "arguments" : { "filename" : t } })
-        r = requests.post(url = HOME_BASE, data = json.dumps(b), headers = header)
+        r = requests.post(url = HOME_BASE, data = json.dumps(b), headers = get_header())
         s += r.json()['result'] + ', '
         
         
-    return render_template('baby.html', message = s), 200
+    return render_template('baby.html', message = s, existing = get_existing()), 200
+
+def get_existing():
+    body = { "arguments": { "fields": [ "id", "name", "percentDone" ]}, "method": "torrent-get"}
+    existing = requests.post(url = HOME_BASE, data = json.dumps(body), headers = get_header()).json()
+    if existing.get('arguments').get('torrents'):
+        return existing
+    else:
+        return None
+
+@APP.route('/edit/', methods=['POST'])
+def edit_existing():
+    clear = request.form.get("clearExisting")
+    body = { "arguments": { "ids": [ int(clear) ] }, "method": "torrent-remove"}
+
+    requests.post(url = HOME_BASE, data = json.dumps(body), headers = get_header())
+    return render_template('baby.html', existing = get_existing())
+    
 
 @APP.route('/download/', methods=['POST'])
 def download_baby_search():
-    magnets = []
     torrents = request.form.getlist('download')
     return download(torrents)
     
@@ -131,7 +138,7 @@ def baby_parse_page(url, sort=None):
     driver.get(url)
     delay = 25 # seconds
     try:
-        myElem = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.ID,'torrents')))
+        WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.ID,'torrents')))
         soup = BeautifulSoup(driver.page_source, 'lxml')
     except TimeoutException:
         return "Could not load search results!"
@@ -149,14 +156,16 @@ def baby_parse_page(url, sort=None):
         times = parse_times(soup)
         seeders, leechers = parse_seed_leech(soup)
         cat, subcat = parse_cat(soup)
+        size = parse_sizes(soup)
         torrents = []
-        for torrent in zip(titles, magnets, times, seeders, subcat):
+        for torrent in zip(titles, magnets, times, seeders, subcat, size):
             torrents.append({
                 'title': torrent[0],
                 'magnet': torrent[1],
                 'time': convert_to_date(torrent[2]),
                 'seeds': int(torrent[3]),
-                'subcat': torrent[4]
+                'subcat': torrent[4],
+                'size': torrent[5]
             })
 
         if sort:
