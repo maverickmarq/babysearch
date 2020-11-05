@@ -1,5 +1,5 @@
 #!/bin/sh
-exec gunicorn3 app:APP \
+exec gunicorn app:APP \
      -w 2 -t 120 \
      -b 0.0.0.0:8000 \
      --max-requests 1000 \
