@@ -4,19 +4,11 @@ This is the main module
 import os
 import json
 import requests
-import re
-import time
-from bs4 import BeautifulSoup
+import urllib
+import datetime
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS, cross_origin
-from datetime import datetime, timedelta
-from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+
 
 APP = Flask(__name__, static_url_path='/static')
 CORS(APP)
@@ -45,6 +37,53 @@ sort_filters = {
     'category_desc': 14
 }
 
+cats = {
+    '101': 'Music',
+    '102': 'Audio books',
+    '103': 'Sound clips',
+    '104': 'FLAC',
+    '199': 'Music - Other',
+    '201': 'Movies',
+    '202': 'Movies DVDR',
+    '203': 'Music videos',
+    '204': 'Movie clips',
+    '205': 'TV shows',
+    '206': 'Handheld',
+    '207': 'HD - Movies',
+    '208': 'HD - TV shows',
+    '209': '3D',
+    '299': 'Video - Other',
+    '301': 'Windows',
+    '302': 'Mac',
+    '303': 'UNIX',
+    '304': 'Handheld',
+    '305': 'IOS (iPad/iPhone)',
+    '306': 'Android',
+    '399': 'Other OS',
+    '401': 'PC',
+    '402': 'Mac',
+    '403': 'PSx',
+    '404': 'XBOX360',
+    '405': 'Wii',
+    '406': 'Handheld',
+    '407': 'IOS (iPad/iPhone)',
+    '408': 'Android',
+    '499': 'Game - Other',
+    '501': 'Movies',
+    '502': 'Movies DVDR',
+    '503': 'Pictures',
+    '504': 'Games',
+    '505': 'HD - Movies',
+    '506': 'Movie clips',
+    '599': 'Porn - Other',
+    '601': 'E-books',
+    '602': 'Comics',
+    '603': 'Pictures',
+    '604': 'Covers',
+    '605': 'Physibles',
+    '699': 'E-books - Other',
+}
+
 searchResults = None
 
 @APP.route('/', methods=['GET', 'POST'])
@@ -54,13 +93,11 @@ def default_baby_search():
     if not term:
         return render_template('baby.html', existing = get_existing()), 200
     else:
-        url = BASE_URL + 'search/' + term
+        cat = request.form.get('cat')
+
         lucky = request.form.get('lucky')
-        torrents = baby_parse_page(url)
-        '''
-        Check that baby_parse_page has returned a list.
-        Otherwise deliver the bad news.
-        '''
+        torrents = query_json(term, cat)
+
         if type(torrents) is not list:
             return render_template('baby.html', message = torrents, existing = get_existing()), 200
 
@@ -68,13 +105,30 @@ def default_baby_search():
             return render_template('baby.html', torrents = torrents, existing = get_existing()), 200
         else:
             return lucky_search(torrents)
-    
+
 
 @APP.route('/search', methods=['GET'])
 def search_baby_search():
     query = request.args.get('q')
-    url = BASE_URL + 'search.php?q=' + query
-    return lucky_search(baby_parse_page(url))
+    cat = request.form.get('cat')
+
+    return lucky_search(query_json(query, cat))
+
+def query_json(term, cat):
+    torrents = requests.get(format_url(term, cat)).json()
+    return add_magnets(torrents)
+
+def format_url(term, cat):
+    return BASE_URL + 'q.php?q=' + term + "&cat=" + cat
+
+def add_magnets(torrents):
+    for t in torrents:
+        t["magnet"] = "magnet:?xt=urn:btih:" + t['info_hash'] + "&dn=" + urllib.parse.quote(t['name'])
+        t["size"] = round(int(t["size"])/1024/1024/1024, 3)
+        t["added"] = datetime.datetime.fromtimestamp(int(t["added"])).strftime('%c')
+        t["category"] = cats[t["category"]]
+
+    return torrents
 
 def lucky_search(torrents):
     if type(torrents) is not list:
@@ -84,11 +138,11 @@ def lucky_search(torrents):
 
     requests.post(url = HOME_BASE, data = json.dumps(body), headers = get_header())
     return render_template('baby.html', existing = get_existing()), 200
-    
+
 def get_header():
     transmission = requests.get(HOME_BASE)
     sessionId = transmission.headers.get('X-Transmission-Session-Id')
-   
+
     return { 'X-Transmission-Session-Id' : sessionId }
 
 
@@ -108,7 +162,7 @@ def edit_existing():
     global searchResults
     requests.post(url = HOME_BASE, data = json.dumps(body), headers = get_header())
     return render_template('baby.html', torrents = searchResults, existing = get_existing())
-    
+
 
 @APP.route('/download/', methods=['POST'])
 def download_baby_search():
@@ -118,191 +172,5 @@ def download_baby_search():
     for t in torrents:
         body = { "arguments" : { "filename" : t }, "method" : "torrent-add" }
         requests.post(url = HOME_BASE, data = json.dumps(body), headers = get_header())
-        
+
     return render_template('baby.html', torrents = searchResults, existing = get_existing()), 200
-    
-
-def baby_parse_page(url, sort=None):
-
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--no-sandbox")
-
-    driver = webdriver.Chrome(chrome_options=chrome_options)
-
-    driver.get(url)
-    delay = 25 # seconds
-    try:
-        WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.ID,'torrents')))
-        soup = BeautifulSoup(driver.page_source, 'lxml')
-    except TimeoutException:
-        return "Could not load search results!"
-
-    '''
-    This function parses the page and returns list of torrents
-    '''
-    titles = parse_titles(soup)
-    magnets = parse_magnet_links(soup)
-    
-    '''
-    if any magnets are found, continue processing
-    '''
-    if titles[0] != "No results returned":
-        times = parse_times(soup)
-        seeders, leechers = parse_seed_leech(soup)
-        cat, subcat = parse_cat(soup)
-        size = parse_sizes(soup)
-        torrents = []
-        for torrent in zip(titles, magnets, times, seeders, subcat, size):
-            torrents.append({
-                'title': torrent[0],
-                'magnet': torrent[1],
-                'time': convert_to_date(torrent[2]),
-                'seeds': int(torrent[3]),
-                'subcat': torrent[4],
-                'size': torrent[5]
-            })
-
-        if sort:
-            sort_params = sort.split('_')
-            torrents = sorted(torrents, key=lambda k: k.get(sort_params[0]), reverse=sort_params[1].upper() == 'DESC')
-
-        global searchResults
-        searchResults = torrents
-        return torrents
-    else:
-        return "No results"
-
-
-def parse_magnet_links(soup):
-    '''
-    Returns list of magnet links from soup
-    '''
-    magnets = soup.find('ol', {'id': 'torrents'}).find_all('a', href=True)
-    magnets = [magnet['href'] for magnet in magnets if 'magnet' in magnet['href']]
-    return magnets
-
-
-def parse_titles(soup):
-    '''
-    Returns list of titles of torrents from soup
-    '''
-    titles = soup.find_all(class_='list-item item-name item-title')
-    titles[:] = [title.get_text() for title in titles]
-    return titles
-
-
-def parse_links(soup):
-    '''
-    Returns list of links of torrents from soup
-    '''
-    links = soup.find_all(class_='list-item item-name item-title')
-    links = [link.find_all('a', href=True) for link in links ]
-    links[:] = [link[0]['href'] for link in links]
-    return links
-
-
-def parse_sizes(soup):
-    '''
-    Returns list of size from soup
-    '''
-    sizes = soup.find_all(class_='list-item item-size')
-    sizes[:] = [size.get_text() for size in sizes]
-
-    return sizes
-
-	
-def parse_times(soup):
-    '''
-    Returns list of time from soup
-    '''
-    times = soup.find_all(class_='list-item item-uploaded')
-    times[:] = [time.get_text() for time in times]
-
-    return times
-
-
-def parse_uploaders(soup):
-    '''
-    Returns list of uploader from soup
-    '''
-    uploaders = soup.find_all(class_='list-item item-user')
-    uploaders[:] = [uploader.get_text() for uploader in uploaders]
-
-    return uploaders
-
-
-def parse_seed_leech(soup):
-    '''
-    Returns list of numbers of seeds and leeches from soup
-    ''' 
-    seeders = soup.find_all(class_='list-item item-seed')
-    seeders[:] = [seeder.get_text() for seeder in seeders]
-
-    leechers = soup.find_all(class_='list-item item-leech')
-    leechers[:] = [leecher.get_text() for leecher in leechers]
-
-    return seeders, leechers
-
-
-def parse_cat(soup):
-    '''
-    Returns list of category and subcategory
-    '''
-    cat_subcat = soup.find_all(class_='list-item item-type')
-    cat = [cat.find_all('a', href=True)[::2] for cat in cat_subcat ]
-    subcat = [subcat.find_all('a', href=True)[1::2] for subcat in cat_subcat ]
-    
-    cat[:] = [c[0].get_text() for c in cat]
-    subcat[:] = [s[0].get_text() for s in subcat]
-    
-    return cat, subcat
-
-
-def convert_to_bytes(size_str):
-    '''
-    Converts torrent sizes to a common count in bytes.
-    '''
-    size_data = size_str.split()
-
-    multipliers = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB']
-
-    size_magnitude = float(size_data[0])
-    multiplier_exp = multipliers.index(size_data[1])
-    size_multiplier = 1024 ** multiplier_exp if multiplier_exp > 0 else 1
-
-    return size_magnitude * size_multiplier
-
-
-def convert_to_date(date_str):
-    '''
-    Converts the dates into a proper standardized datetime.
-    '''
-    date_format = None
-
-    if re.search('^[0-9]+ min(s)? ago$', date_str.strip()):
-        minutes_delta = int(date_str.split()[0])
-        torrent_dt = datetime.now() - timedelta(minutes=minutes_delta)
-        date_str = '{}-{}-{} {}:{}'.format(torrent_dt.year, torrent_dt.month, torrent_dt.day, torrent_dt.hour, torrent_dt.minute)
-        date_format = '%Y-%m-%d %H:%M'
-
-    elif re.search('^[0-9]*-[0-9]*\s[0-9]+:[0-9]+$', date_str.strip()):
-        today = datetime.today()
-        date_str = '{}-'.format(today.year) + date_str
-        date_format = '%Y-%m-%d %H:%M'
-    
-    elif re.search('^Today\s[0-9]+\:[0-9]+$', date_str):
-        today = datetime.today()
-        date_str = date_str.replace('Today', '{}-{}-{}'.format(today.year, today.month, today.day))
-        date_format = '%Y-%m-%d %H:%M'
-    
-    elif re.search('^Y-day\s[0-9]+\:[0-9]+$', date_str):
-        today = datetime.today() - timedelta(days=1)
-        date_str = date_str.replace('Y-day', '{}-{}-{}'.format(today.year, today.month, today.day))
-        date_format = '%Y-%m-%d %H:%M'
-
-    else:
-        date_format = '%Y-%m-%d'
-
-    return datetime.strptime(date_str, date_format)
