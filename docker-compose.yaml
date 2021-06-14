@@ -13,7 +13,7 @@ services:
       - /dev/net/tun            # Required
     environment:                # Review https://github.com/bubuntux/nordvpn#environment-variables
       - USER=maverick.marq@gmail.com
-      - "PASS=<password>"
+      - "PASS=123Calvin@"
       - CONNECT=United_States
       - TECHNOLOGY=NordLynx
       - NETWORK=192.168.0.0/24
@@ -54,8 +54,13 @@ services:
       - vpn
       - transmission
     environment:
-      - BASE_URL=https://thepiratebay.org/
+      - BASE_URL=https://apibay.org/
       - HOME_BASE=http://0.0.0.0:9091/transmission/rpc
       - API_PORT=8000
+      - HOST=https://192.168.0.3
+      - HOST_SSH_PORT=22456
+      - HOST_PATH=/volume1/docker/babysearch-develop/babysearch/
+      - HOST_USER=marc
+      - "PASS=123Calvin@"
     restart: unless-stopped
     network_mode: service:vpn
