@@ -6,17 +6,15 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=America/Los_Angeles
       - TRANSMISSION_WEB_HOME=/transmission-web-control/
       - TRANSMISSION_DOWNLOAD_DIR=/downloads
     volumes:
-      - /volume1/docker/transmission/config:/config
+      - ./config:/config
+      - ./watch:/watch
       - /volume1/Storage/Downloads:/downloads
-      - /volume1/docker/transmission/watch:/watch
     restart: unless-stopped
     ports:
       - 8000:8000
-      - 8080:8080
       - 9091:9091
       - 51413:51413
       - 51413:51413/udp
@@ -27,6 +25,8 @@ services:
     depends_on:
       - transmission
     environment:
+      - PGID=1000
+      - PUID=1000
       - BASE_URL=https://apibay.org/
       - HOME_BASE=http://0.0.0.0:9091/transmission/rpc
       - API_PORT=8000
