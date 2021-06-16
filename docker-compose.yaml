@@ -11,7 +11,7 @@ services:
     volumes:
       - ./config:/config
       - ./watch:/watch
-      - ./downloads:/downloads
+      - /volume1/BigDownload:/downloads
     restart: unless-stopped
     ports:
       - 8000:8000
