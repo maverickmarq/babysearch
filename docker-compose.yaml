@@ -9,9 +9,9 @@ services:
       - TRANSMISSION_WEB_HOME=/transmission-web-control/
       - TRANSMISSION_DOWNLOAD_DIR=/downloads
     volumes:
-      - ./config:/config
-      - ./watch:/watch
-      - /volume1/BigDownload:/downloads
+      - ./transmission/config:/config
+      - ./transmission/watch:/watch
+      - /volume1/Storage/Downloads:/downloads
     restart: unless-stopped
     ports:
       - 8000:8000

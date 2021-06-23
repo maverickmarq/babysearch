@@ -4,144 +4,167 @@
 		<title>BabySearch</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta name="description" content="BabySearch is a full end-to-end magnet downloading ecosystem. Featuring VPN protection, download management, and more to come.">
+		<script
+		  src="https://code.jquery.com/jquery-3.3.1.min.js"
+		  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+		  crossorigin="anonymous"></script>
 	</head>
-	<form action="/" method="post" >
-		<table style="border: 0px;width: 70%;">
-			<tr>
-				<th style="border: 0px;" colspan="3" >
-					<a href="/"><img src="{{url_for('static', filename='Untitled.png')}}" atl="get fucked" style="max-width:100%;height:auto;"/></a>
-				</th>
-			</tr>
-
-			<tr>
-				<td style="border: 0px;" colspan="2">
-					<input type="text" name="term" id="term" style="font-size:2vw">
-				</td>
-				<td style="border: 0px;">
-					<select style="font-size:2vw" name="cat" id="cat">
-						<option value="0">All</option>
-						<optgroup label="Audio">
-						<option value="101">Music</option>
-						<option value="102">Audio books</option>
-						<option value="103">Sound clips</option>
-						<option value="104">FLAC</option>
-						<option value="199">Other</option>
-						</optgroup>
-						<optgroup label="Video">
-						<option value="201">Movies</option>
-						<option value="202">Movies DVDR</option>
-						<option value="203">Music videos</option>
-						<option value="204">Movie clips</option>
-						<option value="205">TV shows</option>
-						<option value="206">Handheld</option>
-						<option value="207">HD - Movies</option>
-						<option value="208">HD - TV shows</option>
-						<option value="209">3D</option>
-						<option value="299">Other</option>
-						</optgroup>
-						<optgroup label="Applications">
-						<option value="301">Windows</option>
-						<option value="302">Mac</option>
-						<option value="303">UNIX</option>
-						<option value="304">Handheld</option>
-						<option value="305">IOS (iPad/iPhone)</option>
-						<option value="306">Android</option>
-						<option value="399">Other OS</option>
-						</optgroup>
-						<optgroup label="Games">
-						<option value="401">PC</option>
-						<option value="402">Mac</option>
-						<option value="403">PSx</option>
-						<option value="404">XBOX360</option>
-						<option value="405">Wii</option>
-						<option value="406">Handheld</option>
-						<option value="407">IOS (iPad/iPhone)</option>
-						<option value="408">Android</option>
-						<option value="499">Other</option>
-						</optgroup>
-						<optgroup label="Porn">
-						<option value="501">Movies</option>
-						<option value="502">Movies DVDR</option>
-						<option value="503">Pictures</option>
-						<option value="504">Games</option>
-						<option value="505">HD - Movies</option>
-						<option value="506">Movie clips</option>
-						<option value="599">Other</option>
-						</optgroup>
-						<optgroup label="Other">
-						<option value="601">E-books</option>
-						<option value="602">Comics</option>
-						<option value="603">Pictures</option>
-						<option value="604">Covers</option>
-						<option value="605">Physibles</option>
-						<option value="699">Other</option>
-						</optgroup>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td style="border: 0px;" colspan="3">
-					<input type="submit" value="Search" name="submit" style="font-size:2vw">
-					<input type="submit" value="Lucky Baby" name="lucky" style="font-size:2vw">
-				</td>
-			<tr>
-		</table>
-	</form>
-	{% if message %}
-	<div><text>{{ message }}</text></div>
-	{% endif %}
-	<div style="align-self: center;">
-		<style>
-			table, th, td {
-			  border: 1px solid black;
-			  margin-left: auto;
-			  margin-right: auto;
-			}
-
-
-		</style>
-		<table style="width: 70%;" >
+	<body>
+		<div class="container-md">
+			<div class="col">
+				<a href="/"><img src="{{url_for('static', filename='Untitled.png')}}" class="img-fluid" alt="get fucked" style="max-width:100%;height:auto;"/></a>
+			</div>
+			<div class="col">
+				<form action="/" method="post">
+					<div class="input-group">
+						<div class="col-1">
+							<select class="form-select" name="cat" id="cat">
+							<option value="0">All</option>
+							<optgroup label="Audio">
+							<option value="101">Music</option>
+							<option value="102">Audio books</option>
+							<option value="103">Sound clips</option>
+							<option value="104">FLAC</option>
+							<option value="199">Other</option>
+							</optgroup>
+							<optgroup label="Video">
+							<option value="201">Movies</option>
+							<option value="202">Movies DVDR</option>
+							<option value="203">Music videos</option>
+							<option value="204">Movie clips</option>
+							<option value="205">TV shows</option>
+							<option value="206">Handheld</option>
+							<option value="207">HD - Movies</option>
+							<option value="208">HD - TV shows</option>
+							<option value="209">3D</option>
+							<option value="299">Other</option>
+							</optgroup>
+							<optgroup label="Applications">
+							<option value="301">Windows</option>
+							<option value="302">Mac</option>
+							<option value="303">UNIX</option>
+							<option value="304">Handheld</option>
+							<option value="305">IOS (iPad/iPhone)</option>
+							<option value="306">Android</option>
+							<option value="399">Other OS</option>
+							</optgroup>
+							<optgroup label="Games">
+							<option value="401">PC</option>
+							<option value="402">Mac</option>
+							<option value="403">PSx</option>
+							<option value="404">XBOX360</option>
+							<option value="405">Wii</option>
+							<option value="406">Handheld</option>
+							<option value="407">IOS (iPad/iPhone)</option>
+							<option value="408">Android</option>
+							<option value="499">Other</option>
+							</optgroup>
+							<optgroup label="Porn">
+							<option value="501">Movies</option>
+							<option value="502">Movies DVDR</option>
+							<option value="503">Pictures</option>
+							<option value="504">Games</option>
+							<option value="505">HD - Movies</option>
+							<option value="506">Movie clips</option>
+							<option value="599">Other</option>
+							</optgroup>
+							<optgroup label="Other">
+							<option value="601">E-books</option>
+							<option value="602">Comics</option>
+							<option value="603">Pictures</option>
+							<option value="604">Covers</option>
+							<option value="605">Physibles</option>
+							<option value="699">Other</option>
+							</optgroup>
+						</select>
+						</div>
+						<div class="col-6">
+							<input id="term" type="text" name="term" class="form-control" placeholder="Search" aria-label="search term with two button addons">
+						</div>
+						<div class="col-1">
+							<button class="btn btn-outline-secondary" type="submit" name="submit">Search</button>
+						</div>
+						<!--<div class="col-1">-->
+						<!--	<button class="btn btn-outline-secondary" type="submit" name="lucky">Lucky Search</button>-->
+						<!--</div>-->
+					</div>
+				</form>
+			</div>
 			{% if existing %}
+			<div class="col">
 				<form action="/edit/" onsubmit="" name="existingForm" id="existingForm" method="post">
-					<tr>
-						<th>Name</th>
-						<th colspan="4">Progress</th>
-						<th>Clear</th>
-					</tr>
+					<table class="table table-striped">
+						<tbody>
+						{%for i in existing.arguments.torrents %}
+							<tr>
+								<th scope="row">{{i.name}}</th>
+								<td class="col-2">
+									<div class="progress" id="progressouter_{{i.id}}">
+									    <div class="progress-bar progress-bar-striped progress-bar-animated" id="progress_{{i.id}}" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+										</div>
+									</div>
+									<script language="JavaScript" type="text/javascript">
+										$(document).ready(function(){
+											var progresspump = setInterval(function(){
+												/* query the completion percentage from the server */
+											   	$.get("/progress/{{i.id}}/", function(data){
+											   		var x = String(parseFloat(data * 100).toFixed(2))
+											   		/* update the progress bar width */
+											   		$("#progress_{{i.id}}").css('width',x +'%');
+											   		/* and display the numeric value */
+											   		$("#progress_{{i.id}}").html(x +'%');
 
-					{%for i in existing.arguments.torrents %}
-					<tr>
-						<td>{{ i.name }}</td>
-						<td colspan="4"><progress value={{ i.percentDone }}></progress></td>
-						<td><button type="submit" value={{i.id}} name="clearExisting">Clear</button></td>
-					</tr>
-					{% endfor %}
+											   		/* test to see if the job has completed */
+											   		if(data * 100 > 99.99) {
+											       		clearInterval(progresspump);
+											       		$("#progressouter_{{i.id}}").removeClass("active");
+											       		$("#progress_{{i.id}}").html("Done");
+											   		}
+												})
+											}, 1000)
+										})
+									</script>
+								</td>
+								<td>
+									<button class="btn btn-danger" type="submit" value={{i.id}} name="clearExisting">Clear</button>
+								</td>
+							</tr>
+						{% endfor %}
+						</tbody>
+					</table>                   
 				</form>
+			</div>
 			{% endif %}
-
 			{% if torrents %}
+			<div class="col">
 				<form action="/download/" onsubmit="" name="downloadForm" id="downloadForm" method="post">
-					<tr>
-						<th>Name</th>
-						<th>Date</th>
-						<th>Seeds</th>
-						<th>Size (GB)</th>
-						<th>Sub-Cat</th>
-						<th>Download</th>
-					</tr>
-
-					{%for i in torrents %}
-						<tr>
-							<td>{{ i.name }}</td>
-							<td>{{ i.added }}</td>
-							<td>{{ i.seeders }}</td>
-							<td>{{ i.size }}</td>
-							<td>{{ i.category }}</td>
-							<td><button type="submit" value={{ i.magnet }} name="download">Download</button></td>
-						</tr>
-					{% endfor %}
+					<table class="table table-striped">
+						<thead>
+							<tr>
+								<th scope="col">Name</th>
+								<th scope="col">Date</th>
+								<th scope="col">Seeds</th>
+								<th scope="col">Size (GB)</th>
+								<th scope="col">Sub-Cat</th>
+								<th scope="col">Download</th>
+							</tr>
+						</thead>
+						<tbody>
+							{%for i in torrents %}
+							<tr>
+								<th>{{ i.name }}</th>
+								<td>{{ i.added }}</td>
+								<td>{{ i.seeders }}</td>
+								<td>{{ i.size }}</td>
+								<td>{{ i.category }}</td>
+								<td><button class="btn btn-outline-secondary" type="submit" value="{{ i.magnet }}" name="download">Download</button></td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
 				</form>
+			</div>
 			{% endif %}
-		</table>
-	</div>
+		</div>
+	</body>
 </html>

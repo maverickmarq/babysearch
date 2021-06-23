@@ -1,8 +1,12 @@
 FROM python:3-alpine
 
-COPY . .
+COPY ./requirements.txt ./requirements.txt
+
+COPY ./entrypoint.sh ./entrypoint.sh
+RUN ["chmod", "+x", "entrypoint.sh"]
 
 RUN pip3 install -r ./requirements.txt
-RUN ["chmod", "+x", "entrypoint.sh"]
+
+COPY . .
 
 ENTRYPOINT ["./entrypoint.sh", "${API_PORT}" ]
