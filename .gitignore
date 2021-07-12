@@ -133,3 +133,6 @@ dmypy.json
 *.dat
 settings.json
 *settings.json
+.DS_Store
+transmission/config/*
+transmission/config/settings*
