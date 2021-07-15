@@ -4,14 +4,15 @@ services:
     image: linuxserver/transmission
     container_name: transmission
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PGID=abc
+      - PUID=abc
       - TRANSMISSION_WEB_HOME=/transmission-web-control/
       - TRANSMISSION_DOWNLOAD_DIR=/downloads
+      - MEDIA_DIR=/volume1/Storage/BabySearch
     volumes:
       - ./transmission/config:/config
       - ./transmission/watch:/watch
-      - ./transmission/downloads:/downloads
+      - /volume1/Storage/BabySearch:/downloads:rw
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -25,10 +26,11 @@ services:
     depends_on:
       - transmission
     environment:
-      - PGID=1000
-      - PUID=1000
+      - PGID=abc
+      - PUID=abc
       - BASE_URL=https://apibay.org/
       - HOME_BASE=http://0.0.0.0:9091/transmission/rpc
       - API_PORT=8000
+      - MEDIA_DIR=/volume1/Storage/BabySearch
     restart: unless-stopped
     network_mode: service:transmission

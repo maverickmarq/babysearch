@@ -9,13 +9,15 @@ import urllib
 
 import requests
 from flask import Flask, render_template, request
+from pathlib import Path
 
 app = Flask(__name__, static_url_path='/static')
-#CORS(app)
+# CORS(app)
 
 BASE_URL = os.getenv('BASE_URL', 'http://example.com/')
 HOME_BASE = os.getenv('HOME_BASE', 'http://example.com/')
 DATABASE_URL = os.getenv('DATABASE_URL', 'http://example.com/')
+TRANSMISSION_DOWNLOAD_DIR = os.getenv('TRANSMISSION_DOWNLOAD_DIR', '/downloads')
 
 JSONIFY_PRETTYPRINT_REGULAR = True
 
@@ -40,7 +42,7 @@ sort_filters = {
 }
 
 cats = {
-    '0':'All',
+    '0': 'All',
     '101': 'Music',
     '102': 'Audio books',
     '103': 'Sound clips',
@@ -137,7 +139,7 @@ def lucky_search(torrents):
         return render_baby()
 
     body = {"method": "torrent-add", "arguments": {"filename": torrents[0]['magnet']}}
-    
+
 
     requests.post(url=HOME_BASE, data=json.dumps(body), headers=get_header())
     return render_baby()
@@ -179,8 +181,8 @@ def get_results():
 
 def render_baby():
     return render_template('baby.html', torrents=get_results(), existing=get_existing()), 200
-    
-   
+
+
 @app.route('/edit/', methods=['POST'])
 def edit_existing():
     clear = request.form.get("clearExisting")
@@ -189,14 +191,17 @@ def edit_existing():
     requests.post(url=HOME_BASE, data=json.dumps(body), headers=get_header())
     return render_baby()
 
-
+#something like this
 @app.route('/download/', methods=['POST'])
 def download_baby_search():
-    torrents = request.form.getlist('download')
+    magnet = request.form.get('magnet')
+    cat = request.form.get('category')
 
-    for t in torrents:
-        body = {"arguments": {"filename": t}, "method": "torrent-add"}
-        requests.post(url=HOME_BASE, data=json.dumps(body), headers=get_header())
+    path = Path(TRANSMISSION_DOWNLOAD_DIR, str(cat))
+    path.mkdir(parents=True, exist_ok=True)
+
+    body = {"arguments": {"filename": magnet, "download-dir": str(path) }, "method": "torrent-add"}
+    requests.post(url=HOME_BASE, data=json.dumps(body), headers=get_header())
 
     return render_baby()
 

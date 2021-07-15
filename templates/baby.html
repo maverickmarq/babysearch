@@ -131,7 +131,7 @@
 							</tr>
 						{% endfor %}
 						</tbody>
-					</table>                   
+					</table>
 				</form>
 			</div>
 			{% endif %}
@@ -157,8 +157,9 @@
 								<td>{{ i.seeders }}</td>
 								<td>{{ i.size }}</td>
 								<td>{{ i.category }}</td>
-								<td><button class="btn btn-outline-secondary" type="submit" value="{{ i.magnet }}" name="download">Download</button></td>
+								<td><button class="btn btn-outline-secondary" type="submit" value="{{ i.magnet }}" name="magnet">Download</button></td>
 							</tr>
+							<input type="hidden" name="category" value="{{ i.category }}" />
 							{% endfor %}
 						</tbody>
 					</table>
