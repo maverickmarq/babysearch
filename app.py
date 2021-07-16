@@ -18,6 +18,9 @@ BASE_URL = os.getenv('BASE_URL', 'http://example.com/')
 HOME_BASE = os.getenv('HOME_BASE', 'http://example.com/')
 DATABASE_URL = os.getenv('DATABASE_URL', 'http://example.com/')
 TRANSMISSION_DOWNLOAD_DIR = os.getenv('TRANSMISSION_DOWNLOAD_DIR', '/downloads')
+MEDIA_DIR = os.getenv('MEDIA_DIR', '.')
+IMDB_URL = os.getenv('IMDB_URL', 'https://www.imdb.com/title/')
+
 
 JSONIFY_PRETTYPRINT_REGULAR = True
 
@@ -42,51 +45,51 @@ sort_filters = {
 }
 
 cats = {
-    '0': 'All',
-    '101': 'Music',
-    '102': 'Audio books',
-    '103': 'Sound clips',
-    '104': 'FLAC',
-    '199': 'Music - Other',
-    '201': 'Movies',
-    '202': 'Movies DVDR',
-    '203': 'Music videos',
-    '204': 'Movie clips',
-    '205': 'TV shows',
-    '206': 'Handheld',
-    '207': 'HD - Movies',
-    '208': 'HD - TV shows',
-    '209': '3D',
-    '299': 'Video - Other',
-    '301': 'Windows',
-    '302': 'Mac',
-    '303': 'UNIX',
-    '304': 'Handheld',
-    '305': 'IOS (iPad/iPhone)',
-    '306': 'Android',
-    '399': 'Other OS',
-    '401': 'PC',
-    '402': 'Mac',
-    '403': 'PSx',
-    '404': 'XBOX360',
-    '405': 'Wii',
-    '406': 'Handheld',
-    '407': 'IOS (iPad/iPhone)',
-    '408': 'Android',
-    '499': 'Game - Other',
-    '501': 'Movies',
-    '502': 'Movies DVDR',
-    '503': 'Pictures',
-    '504': 'Games',
-    '505': 'HD - Movies',
-    '506': 'Movie clips',
-    '599': 'Porn - Other',
-    '601': 'E-books',
-    '602': 'Comics',
-    '603': 'Pictures',
-    '604': 'Covers',
-    '605': 'Physibles',
-    '699': 'E-books - Other',
+    '0': 'Downloads',
+    '101': 'Audio/Music',
+    '102': 'Audio/Audio books',
+    '103': 'Audio/Music - Other',
+    '104': 'Audio/FLAC',
+    '199': 'Audio/Music - Other',
+    '201': 'Media/Movies',
+    '202': 'Media/Movies',
+    '203': 'Music/Music videos',
+    '204': 'Media/Movies/Movie clips',
+    '205': 'Media/TV shows',
+    '206': 'Media/TV shows/Handheld',
+    '207': 'Media/Movies',
+    '208': 'Media/TV shows',
+    '209': 'Media/3D',
+    '299': 'Media/Video - Other',
+    '301': 'Applications/Windows',
+    '302': 'Applications/Mac',
+    '303': 'Applications/UNIX',
+    '304': 'Applications/Handheld',
+    '305': 'Applications/IOS (iPad/iPhone)',
+    '306': 'Applications/Android',
+    '399': 'Applications/Other OS',
+    '401': 'Games/PC',
+    '402': 'Games/Mac',
+    '403': 'Games/PSx',
+    '404': 'Games/XBOX360',
+    '405': 'Games/Wii',
+    '406': 'Games/Handheld',
+    '407': 'Games/IOS (iPad/iPhone)',
+    '408': 'Games/Android',
+    '499': 'Games/Game - Other',
+    '501': 'Porn/Movies',
+    '502': 'Porn/Movies DVDR',
+    '503': 'Porn/Pictures',
+    '504': 'Porn/Games',
+    '505': 'Porn/Movies',
+    '506': 'Porn/Movies/Movie clips',
+    '599': 'Porn/Porn - Other',
+    '601': 'Books/E-books',
+    '602': 'Books/Comics',
+    '603': 'Books/Pictures',
+    '604': 'Books/Covers',
+    '605': 'Books/Physibles',
+    '699': 'Books/E-books - Other',
 }
 
 @app.route('/', methods=['GET', 'POST'])
@@ -130,6 +133,8 @@ def add_magnets(torrents):
         t["size"] = round(int(t["size"]) / 1024 / 1024 / 1024, 3)
         t["added"] = datetime.datetime.fromtimestamp(int(t["added"])).strftime('%c')
         t["category"] = cats[t["category"]]
+        t["imdb_url"] = IMDB_URL + t["imdb"]
+        t["debug"] = t
 
     return torrents
 
@@ -153,13 +158,20 @@ def get_header():
 
 
 def get_existing():
-    body = {"arguments": {"fields": ["id", "name", "percentDone"]}, "method": "torrent-get"}
+    body = {"arguments": {"fields": ["id", "name", "percentDone", "files", "downloadDir"]}, "method": "torrent-get"}
     existing = requests.post(url=HOME_BASE, data=json.dumps(body), headers=get_header()).json()
     if existing.get('arguments').get('torrents'):
-        return existing
+        return replace_download_alias(existing)
     else:
         return None
 
+
+def replace_download_alias(body):
+    t = body.get('arguments').get('torrents')
+    for s in range(len(t)):
+        t[s]['downloadDir']=t[s]['downloadDir'].replace(TRANSMISSION_DOWNLOAD_DIR, MEDIA_DIR)
+    	
+    return t
 
 def get_torrents(term, cat):
     if not term:
@@ -183,6 +195,12 @@ def render_baby():
     return render_template('baby.html', torrents=get_results(), existing=get_existing()), 200
 
 
+def get_path(cat):	
+    path = Path(TRANSMISSION_DOWNLOAD_DIR, str(cat))
+    path.mkdir(parents=True, exist_ok=True)
+    return str(path)
+
+   
 @app.route('/edit/', methods=['POST'])
 def edit_existing():
     clear = request.form.get("clearExisting")
@@ -194,13 +212,11 @@ def edit_existing():
 #something like this
 @app.route('/download/', methods=['POST'])
 def download_baby_search():
-    magnet = request.form.get('magnet')
-    cat = request.form.get('category')
+    id = request.form.get('id')
+    magnet = request.form.get(id+'magnet')
+    path = get_path(request.form.get(id+'category'))
 
-    path = Path(TRANSMISSION_DOWNLOAD_DIR, str(cat))
-    path.mkdir(parents=True, exist_ok=True)
-
-    body = {"arguments": {"filename": magnet, "download-dir": str(path) }, "method": "torrent-add"}
+    body = {"arguments": {"filename": magnet, "download-dir": path }, "method": "torrent-add"}
     requests.post(url=HOME_BASE, data=json.dumps(body), headers=get_header())
 
     return render_baby()
@@ -208,7 +224,7 @@ def download_baby_search():
 
 @app.route('/progress/<id>/', methods=['GET'])
 def progress(id):
-    torrents = get_existing().get('arguments').get('torrents')
+    torrents = get_existing()
     err = False
     for s in range(len(torrents)):
         pattern = r""+str(id)

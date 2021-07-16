@@ -12,10 +12,10 @@ services:
     volumes:
       - ./transmission/config:/config
       - ./transmission/watch:/watch
-      - /volume1/Storage/BabySearch:/downloads:rw
+      - /volume1/Storage/BabySearch:/downloads
     restart: unless-stopped
     ports:
-      - 8000:8000
+      - 9000:9000
       - 9091:9091
       - 51413:51413
       - 51413:51413/udp
@@ -30,7 +30,7 @@ services:
       - PUID=abc
       - BASE_URL=https://apibay.org/
       - HOME_BASE=http://0.0.0.0:9091/transmission/rpc
-      - API_PORT=8000
+      - API_PORT=9000
       - MEDIA_DIR=/volume1/Storage/BabySearch
     restart: unless-stopped
     network_mode: service:transmission
